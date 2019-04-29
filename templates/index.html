@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Home</title>
+</head>
+<body>
+	{% for article in articles %}
+		<b><a href="{{article.link}}" target="_blank">{{article.title}}</a></b><br />
+		<p>{{article.summary|safe}}</p>
+		<hr>
+	{% endfor %}
+</body>
+</html>
