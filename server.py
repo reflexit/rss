@@ -1,21 +1,25 @@
 #!/usr/bin/python3
 
 import os
-from flask import Flask, request, render_template, g, redirect, Response, session, flash, escape
-import feedparser
 import re
 import urllib.request
 import random
 
+from flask import Flask, render_template
+import feedparser
+
+
 RSS_feeds = ['https://9gag-rss.com/api/rss/get?code=9GAGAwesome&format=2']
 
+root_dir = os.getcwd()
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 
 cache = {}
-patterns = [r'"https://.*?\.jpg"', r'"https://.*?\.mp4"', r'"https://.*?\.webm"',
-            r'"http://.*?\.jpg"', r'"http://.*?\.mp4"', r'"http://.*?\.webm"']
+patterns = [r'"https://[^\"]*?\.jpg"', r'"https://[^\"]*?\.mp4"', r'"https://[^\"]*?\.webm"',
+            r'"http://[^\"]*?\.jpg"', r'"http://[^\"]*?\.mp4"', r'"http://[^\"]*?\.webm"']
 cnt = 0
+
 
 @app.route('/')
 def index():
@@ -33,21 +37,27 @@ def index():
             if rnd < 0.9:
                 continue
             
-            url = content[1:-1] # strip quotes
-            if url in cache:    # already cached
-                item['summary'] = item['summary'].replace(url, 'F:/Download/rss/' + cache[url])  # use cached data
+            url = content[1:-1]     # strip quotes
+            print("URL to cache:", url)
+            if url in cache:        # already cached
+                item['summary'] = item['summary'].replace(url, "file://{}/{}".format(root_dir, cache[url]))
+                print("Cache hit:", cache[url])
             else:
                 try:
                     file_name = 'cache/' + str(cnt) + (url[-5:] if url[-1] == 'm' else url[-4:])
                     urllib.request.urlretrieve(url, file_name)
                     cnt += 1
                     cache[url] = file_name
-                    item['summary'] = item['summary'].replace(url, 'F:/Download/rss/' + cache[url])
+                    print("Save cache to %s" % cache[url])
+                    item['summary'] = item['summary'].replace(url, "file://{}/{}".format(root_dir, cache[url]))
                 except Exception as e:
                     print(e)
                     pass
+
+            print("Updated item summary:", item["summary"])
     
     return render_template('index.html', articles=feed['entries'])
+
 
 if __name__ == "__main__":
     import click
@@ -69,9 +79,7 @@ if __name__ == "__main__":
             python server.py --help
 
         """
-
-        HOST, PORT = host, port
-        print("running on %s:%d" % (HOST, PORT))
-        app.run(host=HOST, port=PORT, debug=debug, threaded=threaded)
+        print("running on %s:%d" % (host, port))
+        app.run(host=host, port=port, debug=debug, threaded=threaded)
 
     run()
