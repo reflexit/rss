@@ -1,2 +1,3 @@
-/cache/*.jpg
 .idea/**
+/cache/**
+!/cache/.empty
